@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chart-emotion"
+version = "0.1.0"
+description = "차트 정서 관측소 - 인기곡 차트 목록을 검증·보관하고 비교 실험 설정을 점검하는 로컬 CLI (D01-D04 기반 단계)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+classifiers = ["Private :: Do Not Upload"]
+
+[project.scripts]
+chart-emotion = "chart_emotion.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+chart_emotion = ["py.typed"]

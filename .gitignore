@@ -1,0 +1,30 @@
+# 로컬 실행 자료 (DB, 입력 사본, 실행 결과) - 커밋 금지
+data/
+outputs/
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# 실제 가사·비밀키·개인 설정
+secrets/
+*.env
+.env*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# 편집기·OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

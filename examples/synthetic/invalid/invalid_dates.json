@@ -1,0 +1,18 @@
+{
+  "schema": "chart-emotion.batch.v1",
+  "source_id": "synthetic-demo",
+  "chart_id": "synthetic-weekly-top5-never-created",
+  "snapshot_key": "demo-invalid-dates",
+  "period_start": "2025-12-31",
+  "period_end": "2025-01-01",
+  "display_year": 2025,
+  "methodology_version": "synthetic-v1",
+  "expected_n": 5,
+  "data_mode": "synthetic",
+  "chart": {
+    "name": "잘못된 날짜 배치 (차트가 생성되면 안 됨)",
+    "market": "synthetic",
+    "metric": "synthetic_score",
+    "periodicity": "weekly"
+  }
+}

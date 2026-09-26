@@ -1,0 +1,11 @@
+{
+  "schema": "chart-emotion.batch.v1",
+  "source_id": "synthetic-demo",
+  "chart_id": "synthetic-annual-top5",
+  "period_start": "2018-01-01",
+  "period_end": "2018-02-30",
+  "display_year": "2018",
+  "methodology_version": "synthetic-v1",
+  "expected_n": true,
+  "data_mode": "fake"
+}

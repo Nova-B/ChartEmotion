@@ -1,0 +1,19 @@
+{
+  "schema": "chart-emotion.batch.v1",
+  "source_id": "synthetic-demo",
+  "chart_id": "synthetic-annual-top5",
+  "snapshot_key": "demo-period-c",
+  "period_start": "2020-01-01",
+  "period_end": "2020-12-31",
+  "display_year": 2020,
+  "methodology_version": "synthetic-v1",
+  "expected_n": 5,
+  "data_mode": "synthetic",
+  "chart": {
+    "name": "가상 연간 Top 5 (합성 데이터)",
+    "market": "synthetic",
+    "metric": "synthetic_score",
+    "periodicity": "yearly"
+  },
+  "notes": "누락 순위·정정 revision 시연용 세 번째 기간. 8곡 계수에는 포함하지 않음"
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "chart-emotion.experiment.v1",
+  "experiment_id": "demo-invalid",
+  "revision": true,
+  "data_mode": "synthetic",
+  "snapshot_ids": ["demo-period-a-r1", "demo-period-a-r1"],
+  "top_n": 5,
+  "labelset_version": "v0.1",
+  "labels": ["theme.romance", "emotion.despair"],
+  "counting_unit": "chart_entry",
+  "weighting": "equal",
+  "annotation_role": "adopted",
+  "coverage_threshold": 1.5
+}

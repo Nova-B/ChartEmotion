@@ -1,0 +1,19 @@
+{
+  "schema": "chart-emotion.batch.v1",
+  "source_id": "synthetic-demo",
+  "chart_id": "synthetic-versions-top3",
+  "snapshot_key": "demo-versions",
+  "period_start": "2025-06-01",
+  "period_end": "2025-06-07",
+  "display_year": 2025,
+  "methodology_version": "synthetic-v1",
+  "expected_n": 3,
+  "data_mode": "synthetic",
+  "chart": {
+    "name": "같은 제목·다른 버전 시연 차트 (합성 데이터)",
+    "market": "synthetic",
+    "metric": "synthetic_score",
+    "periodicity": "weekly"
+  },
+  "notes": "같은 제목 문자열 3행이 각각 별도 항목으로 보관되는지 확인하는 용도. 8곡 계수와 무관"
+}

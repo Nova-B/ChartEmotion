@@ -1,0 +1,15 @@
+{
+  "schema": "chart-emotion.experiment.v1",
+  "experiment_id": "demo-comparison",
+  "revision": 1,
+  "question": "가상 자료: 두 시점의 연애 주제·불안 감정·위로 기능 비중이 다른가? (시연용, 실제 분석 아님)",
+  "data_mode": "synthetic",
+  "snapshot_ids": ["demo-period-a-r1", "demo-period-b-r1"],
+  "top_n": 5,
+  "labelset_version": "v0.1",
+  "labels": ["theme.romance", "emotion.anxiety", "function.comfort"],
+  "counting_unit": "chart_entry",
+  "weighting": "equal",
+  "annotation_role": "adopted",
+  "coverage_threshold": 0.8
+}
