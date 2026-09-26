@@ -9,7 +9,20 @@ from chart_emotion.application.sources import SourceSpec, register_source
 from chart_emotion.application.validate import validate_experiment, validate_workspace
 from chart_emotion.errors import InputError
 
-from helpers import BATCHES, CHARTS, EXPERIMENTS, VALID_CSV, WorkspaceCase, batch_dict, experiment_dict, write_json, write_text
+from helpers import (
+    BATCHES,
+    CHARTS,
+    EXPERIMENTS,
+    MAPPINGS,
+    VALID_CSV,
+    WorkspaceCase,
+    batch_dict,
+    experiment_dict,
+    mapping_dict,
+    mappings_file,
+    write_json,
+    write_text,
+)
 
 
 def error_codes(report: dict) -> list[str]:
@@ -37,7 +50,8 @@ class WorkspaceValidateTest(WorkspaceCase):
         report = validate_workspace(self.ws)
         self.assertTrue(report["ok"])
         self.assertEqual(report["totals"]["snapshots"], 0)
-        self.assertEqual(report["matching"]["status"], "not_implemented")
+        self.assertEqual(report["matching"]["status"], "no_entries")
+        self.assertEqual(report["lyrics"]["status"], "metadata_only")
         self.assertEqual(report["labeling"]["status"], "not_analyzed")
         self.assertEqual(report["analysis"]["status"], "not_performed")
         self.assertTrue(report["foreign_keys_enabled"])
@@ -69,6 +83,26 @@ class WorkspaceValidateTest(WorkspaceCase):
         self.assertEqual(report["totals"]["entries_latest_revisions"], 5)
         self.assertEqual(report["totals"]["snapshots_latest_revision"], 1)
 
+    def test_matching_scope_uses_latest_revisions_only(self) -> None:
+        from chart_emotion.application.mappings import import_mappings
+
+        self.import_demo()
+        self.import_demo_recordings()
+        import_mappings(self.ws, MAPPINGS / "period_a_initial.json")
+        import_chart(self.ws, CHARTS / "period_c_incomplete.csv", BATCHES / "period_c.json")
+        import_chart(self.ws, CHARTS / "period_c_corrected.csv", BATCHES / "period_c.json", revision=2)
+        report = validate_workspace(self.ws)
+        matching = report["matching"]
+        self.assertEqual(matching["scope_snapshot_ids"], ["demo-period-a-r1", "demo-period-c-r2", "demo-period-b-r1"])
+        self.assertEqual(matching["entries"], 15)
+        self.assertEqual(matching["states"], {"confirmed": 3, "candidate": 1, "unresolved": 1, "unmapped": 10})
+        self.assertEqual(matching["status"], "in_progress")
+        self.assertEqual(report["totals"]["recordings"], 10)
+        self.assertEqual(report["totals"]["lyric_versions"], 10)
+        self.assertEqual(report["totals"]["mapping_revisions"], 5)
+        self.assertEqual(report["lyrics"]["by_status"]["missing"], 3)
+        self.assertTrue(report["ok"])
+
     def test_pending_real_source_listed(self) -> None:
         register_source(self.ws, SourceSpec(source_id="real-x", name="실제 예시", kind="chart", data_mode="real", status="pending", allowed_operations=()))
         report = validate_workspace(self.ws)
@@ -94,6 +128,72 @@ class ExperimentValidateTest(WorkspaceCase):
         self.assertEqual(comp["identical_string_rows_across_snapshots"], 2)
         self.assertEqual(report["analysis"]["status"], "not_performed")
         self.assertEqual(report["labeling"]["status"], "not_analyzed")
+
+    def test_experiment_matching_progress_scoped_to_selected_snapshots(self) -> None:
+        from chart_emotion.application.mappings import import_mappings
+
+        self.import_demo_recordings()
+        report = validate_experiment(self.ws, EXPERIMENTS / "demo_comparison.json")
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["matching"]["status"], "not_started")
+        self.assertIn("matching_incomplete", warning_codes(report))
+        import_mappings(self.ws, MAPPINGS / "period_a_initial.json")
+        import_mappings(self.ws, MAPPINGS / "period_b_initial.json")
+        import_chart(self.ws, write_text(self.path("o.csv"), VALID_CSV), write_json(self.path("o.json"), batch_dict(snapshot_key="other", period_start="2016-01-01", period_end="2016-12-31", display_year=2016)))
+        report = validate_experiment(self.ws, EXPERIMENTS / "demo_comparison.json")
+        matching = report["matching"]
+        self.assertEqual(matching["scope_snapshot_ids"], ["demo-period-a-r1", "demo-period-b-r1"])
+        self.assertEqual(matching["entries"], 10, "다른 스냅샷(other-r1)은 범위에 들어가지 않는다")
+        self.assertEqual(matching["states"], {"confirmed": 7, "candidate": 2, "unresolved": 1, "unmapped": 0})
+        self.assertEqual(matching["confirmed_recordings_in_all_snapshots"], ["rec-demo-001"])
+        b_entries = matching["entries_by_snapshot"]["demo-period-b-r1"]
+        self.assertEqual([(e["rank"], e["state"], e["lyric_status"], e["vocal_type"]) for e in b_entries][:3],
+                         [(1, "confirmed", "missing", "lyrical"), (2, "confirmed", "available", "lyrical"), (3, "confirmed", "not_applicable", "instrumental")])
+        self.assertEqual([w["code"] for w in report["warnings"]], ["matching_incomplete"])
+        self.assertTrue(report["ok"], "매칭 미완료는 검증 오류가 아니라 경고다")
+        import_mappings(self.ws, MAPPINGS / "corrections.json")
+        import_mappings(self.ws, MAPPINGS / "reconfirm.json")
+        report = validate_experiment(self.ws, EXPERIMENTS / "demo_comparison.json")
+        self.assertEqual(report["matching"]["status"], "complete")
+        self.assertEqual(report["warnings"], [])
+        self.assertEqual(report["labeling"]["status"], "not_analyzed")
+        self.assertEqual(report["analysis"]["status"], "not_performed")
+
+    def test_experiment_lyrics_summary_scoped_to_selected_snapshots(self) -> None:
+        from chart_emotion.application.mappings import import_mappings
+        from chart_emotion.application.recordings import import_recordings
+
+        from helpers import lyric_dict, recording_dict, recordings_file
+
+        self.import_demo_recordings()
+        import_mappings(self.ws, MAPPINGS / "period_a_initial.json")
+        import_mappings(self.ws, MAPPINGS / "period_b_initial.json")
+        # 어떤 항목에도 매핑되지 않은 카탈로그 등록(가사 available 2건)
+        import_recordings(self.ws, write_json(self.path("extra.json"), recordings_file(
+            [recording_dict(recording_id="rec-extra-1"), recording_dict(recording_id="rec-extra-2")],
+            [lyric_dict(lyric_version_id="lyr-extra-1", recording_id="rec-extra-1"), lyric_dict(lyric_version_id="lyr-extra-2", recording_id="rec-extra-2")],
+        )))
+        report = validate_experiment(self.ws, EXPERIMENTS / "demo_comparison.json")
+        lyrics = report["lyrics"]
+        self.assertEqual(lyrics["scope"], "selected_snapshots_latest_mappings")
+        self.assertEqual(lyrics["scope_snapshot_ids"], ["demo-period-a-r1", "demo-period-b-r1"])
+        self.assertEqual(lyrics["entries"], 10)
+        # A: confirmed 1(available),3(partial),4(missing); B: confirmed 1(missing),2(available),3(not_applicable),5(translation_only); 후보 2·보류 1
+        self.assertEqual(
+            lyrics["by_status"],
+            {"available": 2, "partial": 1, "translation_only": 1, "missing": 2, "not_applicable": 1, "none": 0, "not_confirmed": 3},
+        )
+        self.assertEqual(lyrics["distinct_lyric_versions"], 6, "lyr-demo-001-ko 는 두 기간에 공통")
+        self.assertNotIn("lyric_versions", lyrics, "실험 절에는 카탈로그 합계를 넣지 않는다")
+        workspace = validate_workspace(self.ws)["lyrics"]
+        self.assertEqual(workspace["scope"], "workspace_catalogue")
+        self.assertEqual(workspace["lyric_versions"], 12)
+        self.assertEqual(workspace["by_status"]["available"], 6)
+        # 가사 버전 없이 확정하면 none 으로 센다
+        import_mappings(self.ws, write_json(self.path("m.json"), mappings_file([mapping_dict(rank=2, state="confirmed", recording_id="rec-demo-002", lyric_version_id=None, reason="가사 미선택 확정", base_revision=1)])))
+        lyrics = validate_experiment(self.ws, EXPERIMENTS / "demo_comparison.json")["lyrics"]
+        self.assertEqual(lyrics["by_status"]["none"], 1)
+        self.assertEqual(lyrics["by_status"]["not_confirmed"], 2)
 
     def test_structural_errors_raise_input_error(self) -> None:
         with self.assertRaises(InputError) as ctx:

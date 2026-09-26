@@ -1,0 +1,11 @@
+{
+  "schema": "chart-emotion.mappings.v1",
+  "reviewer_id": "reviewer-1",
+  "mappings": [
+    {"snapshot_id": "demo-period-b-r1", "rank": 1, "state": "confirmed", "recording_id": "rec-demo-006", "lyric_version_id": "lyr-demo-006-missing", "reason": "표기 확인. 가사 미확보", "base_revision": 0},
+    {"snapshot_id": "demo-period-b-r1", "rank": 2, "state": "confirmed", "recording_id": "rec-demo-001", "lyric_version_id": "lyr-demo-001-ko", "reason": "기간 A 와 같은 녹음. 같은 가사 버전 재사용", "base_revision": 0},
+    {"snapshot_id": "demo-period-b-r1", "rank": 3, "state": "confirmed", "recording_id": "rec-demo-007", "lyric_version_id": "lyr-demo-007-na", "reason": "연주곡. 가사 비대상", "base_revision": 0},
+    {"snapshot_id": "demo-period-b-r1", "rank": 4, "state": "candidate", "recording_id": "rec-demo-002", "reason": "기간 A 후보와 같은 문자열. 재녹음 여부 미확인", "base_revision": 0},
+    {"snapshot_id": "demo-period-b-r1", "rank": 5, "state": "confirmed", "recording_id": "rec-demo-008", "lyric_version_id": "lyr-demo-008-en", "reason": "표기 확인. 번역본만 확보", "base_revision": 0}
+  ]
+}

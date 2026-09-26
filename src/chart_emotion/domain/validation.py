@@ -9,7 +9,8 @@ from typing import Any, Iterable
 
 from ..errors import InputError
 
-DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# ASCII 숫자만 허용한다. `\d` 는 유니코드 숫자(예: 아라비아-인도 숫자)도 받으므로 쓰지 않는다.
+DATE_PATTERN = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 
 _MISSING = object()
 
@@ -170,13 +171,14 @@ def check_enum(
 
 
 def parse_iso_date(text: str) -> date | None:
-    """YYYY-MM-DD 형식만 허용. 달력상 존재하지 않는 날짜는 None."""
+    """ASCII YYYY-MM-DD 형식만 허용. 연도 0000 이나 달력상 존재하지 않는 날짜(평년 2월 29일 등)는 None."""
     if DATE_PATTERN.fullmatch(text) is None:
         return None
     try:
-        return date.fromisoformat(text)
+        parsed = date.fromisoformat(text)
     except ValueError:
         return None
+    return parsed if parsed.year >= 1 else None
 
 
 def check_date(errors: FieldErrors, obj: dict[str, Any], field: str, *, required: bool = True) -> date | None:
@@ -188,6 +190,36 @@ def check_date(errors: FieldErrors, obj: dict[str, Any], field: str, *, required
         errors.add(field, "invalid_date", f"YYYY-MM-DD 형식의 실재하는 날짜여야 합니다 (현재: '{value}')")
         return None
     return parsed
+
+
+def check_object_list(
+    errors: FieldErrors,
+    obj: dict[str, Any],
+    field: str,
+    *,
+    required: bool = True,
+    min_items: int = 0,
+) -> list[dict[str, Any]] | None:
+    """객체 배열 필드. 항목이 객체가 아니면 인덱스와 함께 오류를 남긴다."""
+    value = obj.get(field, _MISSING)
+    if value is _MISSING or value is None:
+        if required:
+            errors.add(field, "missing_field", "필수 필드가 없습니다")
+        return None
+    if not isinstance(value, list):
+        errors.add(field, "wrong_type", f"객체 배열이어야 합니다 (현재: {type(value).__name__})")
+        return None
+    ok = True
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            errors.add(f"{field}[{index}]", "wrong_type", f"객체여야 합니다 (현재: {type(item).__name__})")
+            ok = False
+    if not ok:
+        return None
+    if len(value) < min_items:
+        errors.add(field, "too_few_items", f"항목이 {min_items}개 이상이어야 합니다 (현재: {len(value)})")
+        return None
+    return value
 
 
 def check_str_list(

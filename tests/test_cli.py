@@ -8,7 +8,7 @@ import subprocess
 import sys
 import unittest
 
-from helpers import BATCHES, CHARTS, EXPERIMENTS, INVALID, ROOT, SRC, TempDirCase, run_cli
+from helpers import BATCHES, CHARTS, EXPERIMENTS, INVALID, MAPPINGS, RECORDINGS, ROOT, SRC, TempDirCase, run_cli
 
 
 class CliExitCodeTest(TempDirCase):
@@ -138,6 +138,51 @@ class CliExitCodeTest(TempDirCase):
         code, out, _ = run_cli(["validate", "--workspace", ws])
         self.assertEqual(json.loads(out)["totals"]["snapshots"], 0)
 
+    def test_d05_cli_sequence_and_exit_codes(self) -> None:
+        ws = str(self.path("ws"))
+        run_cli(["init", ws])
+        for period in ("a", "b"):
+            run_cli(["import-chart", str(CHARTS / f"period_{period}.csv"), "--batch", str(BATCHES / f"period_{period}.json"), "--workspace", ws])
+        # 가사 출처 없이 등록 → 2, 아무것도 남지 않음
+        code, _, err = run_cli(["import-recordings", str(RECORDINGS / "recordings.json"), "--workspace", ws])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "source_not_registered")
+        code, out, _ = run_cli(["register-source", "--workspace", ws, "--source-id", "synthetic-lyrics", "--name", "가상 가사", "--kind", "lyrics", "--data-mode", "synthetic"])
+        self.assertEqual(code, 0)
+        code, out, _ = run_cli(["import-recordings", str(RECORDINGS / "recordings.json"), "--workspace", ws])
+        self.assertEqual(code, 0)
+        self.assertEqual(len(json.loads(out)["recordings"]["registered"]), 10)
+        code, _, err = run_cli(["import-recordings", str(INVALID / "recordings_invalid.json"), "--workspace", ws])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "recordings_file_invalid")
+        for name in ("period_a_initial", "period_b_initial"):
+            code, out, _ = run_cli(["import-mappings", str(MAPPINGS / f"{name}.json"), "--workspace", ws])
+            self.assertEqual(code, 0)
+            self.assertEqual(len(json.loads(out)["appended"]), 5)
+        code, _, err = run_cli(["import-mappings", str(INVALID / "mapping_lyric_mismatch.json"), "--workspace", ws])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "lyric_recording_mismatch")
+        code, out, _ = run_cli(["import-mappings", str(MAPPINGS / "corrections.json"), "--workspace", ws])
+        self.assertEqual(code, 0)
+        code, _, err = run_cli(["import-mappings", str(MAPPINGS / "stale_conflict.json"), "--workspace", ws])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "stale_base_revision")
+        self.assertNotIn("Traceback", err)
+        code, out, _ = run_cli(["show-mappings", "--workspace", ws, "--snapshot", "demo-period-b-r1", "--history"])
+        self.assertEqual(code, 0)
+        entry = json.loads(out)["snapshots"][0]["entries"][3]
+        self.assertEqual([h["state"] for h in entry["history"]], ["candidate", "unresolved"])
+        code, _, err = run_cli(["show-mappings", "--workspace", ws, "--snapshot", "ghost"])
+        self.assertEqual(code, 2)
+        code, out, _ = run_cli(["validate", "--workspace", ws, "--experiment", str(EXPERIMENTS / "demo_comparison.json")])
+        self.assertEqual(code, 0)
+        report = json.loads(out)
+        self.assertEqual(report["matching"]["states"], {"confirmed": 9, "candidate": 0, "unresolved": 1, "unmapped": 0})
+        self.assertEqual([w["code"] for w in report["warnings"]], ["matching_incomplete"])
+        code, _, err = run_cli(["import-mappings", str(self.path("missing.json")), "--workspace", ws])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "json_not_found")
+
     def test_register_source_cli(self) -> None:
         ws = str(self.path("ws"))
         run_cli(["init", ws])
@@ -157,7 +202,7 @@ class CliExitCodeTest(TempDirCase):
         ws = str(self.path("ws"))
         proc = subprocess.run([sys.executable, "-m", "chart_emotion", "init", ws], capture_output=True, text=True, env=env, cwd=str(ROOT), encoding="utf-8")
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(json.loads(proc.stdout)["schema_version"], 1)
+        self.assertEqual(json.loads(proc.stdout)["schema_version"], 2)
         proc = subprocess.run([sys.executable, "-m", "chart_emotion", "validate", "--workspace", str(self.path("missing"))], capture_output=True, text=True, env=env, cwd=str(ROOT), encoding="utf-8")
         self.assertEqual(proc.returncode, 2)
         self.assertEqual(json.loads(proc.stderr)["error"]["code"], "workspace_not_initialized")

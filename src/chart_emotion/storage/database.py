@@ -6,9 +6,9 @@
 - 현재 코드보다 새로운(또는 알 수 없는) 스키마 버전은 아무것도 바꾸지 않고 거부한다.
 - 읽기·쓰기 명령은 초기화되지 않은 폴더에 DB 를 만들지 않는다. 초기화·마이그레이션은 `init` 만 수행한다.
 
-v0.1 기반 단계(D01~D04)의 테이블은 sources, chart_definitions, chart_snapshots, chart_entries 네 개다.
-recordings / entry_mappings / lyric_versions / annotation_revisions / experiment_revisions / runs 는
-D05 이후 필요한 시점에 새 마이그레이션으로 추가한다.
+스키마 v1(D01~D04): sources, chart_definitions, chart_snapshots, chart_entries.
+스키마 v2(D05): recordings, lyric_versions, entry_mappings 추가. v1 자료는 그대로 보존된다.
+annotation_revisions / experiment_revisions / runs 는 D06 이후 필요한 시점에 새 마이그레이션으로 추가한다.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from pathlib import Path
 from ..errors import ProcessingError, WorkspaceError
 
 DB_FILENAME = "chart_emotion.sqlite3"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 MIGRATIONS: dict[int, str] = {
     1: """
@@ -84,6 +84,58 @@ CREATE TABLE chart_entries (
     provider_track_id TEXT,
     PRIMARY KEY (snapshot_id, rank)
 ) WITHOUT ROWID;
+""",
+    2: """
+CREATE TABLE recordings (
+    recording_id          TEXT PRIMARY KEY,
+    title                 TEXT NOT NULL,
+    artist                TEXT NOT NULL,
+    version_kind          TEXT NOT NULL CHECK (version_kind IN ('original', 'rerecording', 'cover', 'remix', 'live', 'translation', 'other')),
+    version_label         TEXT,
+    original_recording_id TEXT REFERENCES recordings (recording_id),
+    release_precision     TEXT NOT NULL CHECK (release_precision IN ('unknown', 'year', 'month', 'day')),
+    release_date          TEXT,               -- 정밀도에 맞는 문자열(YYYY / YYYY-MM / YYYY-MM-DD). unknown 이면 NULL
+    vocal_type            TEXT NOT NULL CHECK (vocal_type IN ('lyrical', 'instrumental')),
+    data_mode             TEXT NOT NULL CHECK (data_mode IN ('synthetic', 'real')),
+    source_id             TEXT REFERENCES sources (source_id),   -- 메타데이터 출처(선택). 없으면 수동 입력
+    provider_track_ids    TEXT NOT NULL,      -- JSON 배열. 참고용이며 병합 근거가 아님
+    notes                 TEXT,
+    content_sha256        TEXT NOT NULL,      -- 등록 내용 해시. 같은 ID 로 다른 내용은 거부
+    registered_by         TEXT NOT NULL,
+    registered_at         TEXT NOT NULL,
+    CHECK ((release_precision = 'unknown') = (release_date IS NULL))
+);
+
+CREATE TABLE lyric_versions (
+    lyric_version_id TEXT PRIMARY KEY,
+    recording_id     TEXT NOT NULL REFERENCES recordings (recording_id),
+    status           TEXT NOT NULL CHECK (status IN ('available', 'partial', 'translation_only', 'missing', 'not_applicable')),
+    language         TEXT,
+    source_id        TEXT REFERENCES sources (source_id),
+    reference        TEXT,               -- 보관·접근 참조(경로·카탈로그 ID). 가사 본문이 아니다
+    notes            TEXT,
+    content_sha256   TEXT NOT NULL,
+    registered_by    TEXT NOT NULL,
+    registered_at    TEXT NOT NULL
+);
+
+CREATE TABLE entry_mappings (
+    mapping_id       TEXT PRIMARY KEY,   -- '<snapshot_id>.rank<rank>.r<revision>' 불변 ID
+    snapshot_id      TEXT NOT NULL,
+    rank             INTEGER NOT NULL CHECK (rank > 0),
+    revision         INTEGER NOT NULL CHECK (revision > 0),
+    base_revision    INTEGER NOT NULL CHECK (base_revision >= 0 AND base_revision < revision),
+    state            TEXT NOT NULL CHECK (state IN ('candidate', 'confirmed', 'unresolved')),
+    recording_id     TEXT REFERENCES recordings (recording_id),
+    lyric_version_id TEXT REFERENCES lyric_versions (lyric_version_id),
+    reviewer_id      TEXT NOT NULL,
+    reason           TEXT NOT NULL,
+    created_at       TEXT NOT NULL,
+    FOREIGN KEY (snapshot_id, rank) REFERENCES chart_entries (snapshot_id, rank),
+    UNIQUE (snapshot_id, rank, revision),
+    CHECK ((state = 'unresolved') = (recording_id IS NULL)),
+    CHECK (recording_id IS NOT NULL OR lyric_version_id IS NULL)
+);
 """,
 }
 

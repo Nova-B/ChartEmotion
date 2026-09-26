@@ -122,6 +122,26 @@ def is_valid_identifier(value: object) -> bool:
     return isinstance(value, str) and IDENTIFIER_PATTERN.fullmatch(value) is not None
 
 
+# ---------------------------------------------------------------------------
+# D05: 녹음(recording)·가사 버전·차트 항목 매핑 계약
+# ---------------------------------------------------------------------------
+
+VERSION_KINDS: tuple[str, ...] = ("original", "rerecording", "cover", "remix", "live", "translation", "other")
+RELEASE_PRECISIONS: tuple[str, ...] = ("unknown", "year", "month", "day")
+VOCAL_TYPES: tuple[str, ...] = ("lyrical", "instrumental")
+
+# 가사 '메타데이터' 상태. 본문은 저장하지 않는다.
+LYRIC_STATUSES: tuple[str, ...] = ("available", "partial", "translation_only", "missing", "not_applicable")
+LYRIC_STATUSES_WITH_ACCESS: tuple[str, ...] = ("available", "partial", "translation_only")  # 출처·언어·참조가 필요한 상태
+
+# 매핑 상태. 행이 없으면 'unmapped'(파생 상태)다. candidate 는 확정이 아니다.
+MAPPING_STATES: tuple[str, ...] = ("candidate", "confirmed", "unresolved")
+MAPPING_STATES_WITH_RECORDING: tuple[str, ...] = ("candidate", "confirmed")
+
+LANGUAGE_PATTERN = re.compile(r"^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$")
+
 # 문서 계약 버전(선택 필드 `schema`). 다른 값은 거부한다.
 BATCH_SCHEMA = "chart-emotion.batch.v1"
 EXPERIMENT_SCHEMA = "chart-emotion.experiment.v1"
+RECORDINGS_SCHEMA = "chart-emotion.recordings.v1"
+MAPPINGS_SCHEMA = "chart-emotion.mappings.v1"

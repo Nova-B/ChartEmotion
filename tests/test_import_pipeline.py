@@ -19,7 +19,10 @@ class DemoPipelineTest(WorkspaceCase):
         self.assertTrue(a["chart_created"])
         self.assertFalse(b["chart_created"])
         self.assertEqual((a["snapshot_id"], b["snapshot_id"]), ("demo-period-a-r1", "demo-period-b-r1"))
-        self.assertEqual(self.table_counts(), {"sources": 1, "chart_definitions": 1, "chart_snapshots": 2, "chart_entries": 10})
+        self.assertEqual(
+            self.table_counts(),
+            {"sources": 1, "chart_definitions": 1, "chart_snapshots": 2, "chart_entries": 10, "recordings": 0, "lyric_versions": 0, "entry_mappings": 0},
+        )
         distinct = self.query("SELECT COUNT(*) FROM (SELECT DISTINCT title, artist, provider_track_id FROM chart_entries)")
         self.assertEqual(distinct[0][0], 8)
         # 문자열이 같아도 항목은 (snapshot_id, rank) 마다 따로 저장된다
@@ -96,7 +99,9 @@ class DemoPipelineTest(WorkspaceCase):
         self.assertEqual(len(rows), 3)
         self.assertEqual({r[1] for r in rows}, {"가상곡 가"})
         self.assertEqual(len({r[3] for r in rows}), 3)
-        self.assertNotIn("recordings", {r[0] for r in self.query("SELECT name FROM sqlite_master WHERE type='table'")})
+        # 차트 가져오기는 녹음·매핑을 만들지 않는다(문자열로 자동 매칭하지 않음)
+        self.assertEqual(self.query("SELECT COUNT(*) FROM recordings")[0][0], 0)
+        self.assertEqual(self.query("SELECT COUNT(*) FROM entry_mappings")[0][0], 0)
 
 
 class AtomicityTest(WorkspaceCase):

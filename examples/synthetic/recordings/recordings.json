@@ -1,0 +1,138 @@
+{
+  "schema": "chart-emotion.recordings.v1",
+  "registered_by": "reviewer-1",
+  "recordings": [
+    {
+      "recording_id": "rec-demo-001",
+      "title": "가상곡 가",
+      "artist": "가상가수 A",
+      "version_kind": "original",
+      "release_precision": "day",
+      "release_date": "2015-03-14",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic",
+      "provider_track_ids": ["demo-001"],
+      "notes": "가상 자료. 두 기간에 모두 등장"
+    },
+    {
+      "recording_id": "rec-demo-002",
+      "title": "가상곡 나",
+      "artist": "가상가수 B",
+      "version_kind": "original",
+      "release_precision": "month",
+      "release_date": "2015-06",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic",
+      "provider_track_ids": ["demo-002"],
+      "notes": "발매 월만 알려진 가상 사례"
+    },
+    {
+      "recording_id": "rec-demo-003",
+      "title": "가상곡 다, 그리고 밤",
+      "artist": "가상가수 C",
+      "version_kind": "original",
+      "release_precision": "year",
+      "release_date": "2014",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic",
+      "provider_track_ids": ["demo-003"],
+      "notes": "발매 연도만 알려진 가상 사례. 1월 1일로 확정하지 않음"
+    },
+    {
+      "recording_id": "rec-demo-004",
+      "title": "가상곡 라",
+      "artist": "가상가수 D",
+      "version_kind": "original",
+      "release_precision": "unknown",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic",
+      "provider_track_ids": ["demo-004"],
+      "notes": "발매일 미확인 가상 사례"
+    },
+    {
+      "recording_id": "rec-demo-005",
+      "title": "가상곡 마",
+      "artist": "가상가수 E",
+      "version_kind": "original",
+      "release_precision": "day",
+      "release_date": "2015-11-02",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic",
+      "notes": "차트에 provider_track_id 가 없던 가상 사례"
+    },
+    {
+      "recording_id": "rec-demo-006",
+      "title": "가상곡 바",
+      "artist": "가상가수 F",
+      "version_kind": "original",
+      "release_precision": "day",
+      "release_date": "2025-01-20",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic",
+      "provider_track_ids": ["demo-006"]
+    },
+    {
+      "recording_id": "rec-demo-007",
+      "title": "가상곡 사\n(두 줄 제목)",
+      "artist": "가상가수 G",
+      "version_kind": "original",
+      "release_precision": "month",
+      "release_date": "2025-04",
+      "vocal_type": "instrumental",
+      "data_mode": "synthetic",
+      "provider_track_ids": ["demo-007"],
+      "notes": "연주곡(가상). 가사 분석 비대상"
+    },
+    {
+      "recording_id": "rec-demo-008",
+      "title": "가상곡 아 \"따옴표\"",
+      "artist": "가상가수 H",
+      "version_kind": "original",
+      "release_precision": "day",
+      "release_date": "2025-08-08",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic",
+      "provider_track_ids": ["demo-008"]
+    },
+    {
+      "recording_id": "rec-demo-001-rerecord-2025",
+      "title": "가상곡 가",
+      "artist": "가상가수 A",
+      "version_kind": "rerecording",
+      "version_label": "2025 재녹음 (가상)",
+      "original_recording_id": "rec-demo-001",
+      "release_precision": "day",
+      "release_date": "2025-05-01",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic",
+      "provider_track_ids": ["demo-001-rerecord-2025"],
+      "notes": "같은 제목·같은 가수의 다른 버전. 원곡과 별도 ID"
+    },
+    {
+      "recording_id": "rec-demo-009-cover",
+      "title": "가상곡 가",
+      "artist": "가상가수 H",
+      "version_kind": "cover",
+      "version_label": "가상가수 H 커버 (가상)",
+      "original_recording_id": "rec-demo-001",
+      "release_precision": "year",
+      "release_date": "2025",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic",
+      "provider_track_ids": ["demo-009-cover"],
+      "notes": "같은 제목의 다른 가수 커버. 원곡과 별도 ID"
+    }
+  ],
+  "lyric_versions": [
+    {"lyric_version_id": "lyr-demo-001-ko", "recording_id": "rec-demo-001", "status": "available", "language": "ko", "source_id": "synthetic-lyrics", "reference": "synthetic://lyrics/demo-001", "notes": "가상 참조. 본문 없음"},
+    {"lyric_version_id": "lyr-demo-002-ko", "recording_id": "rec-demo-002", "status": "available", "language": "ko", "source_id": "synthetic-lyrics", "reference": "synthetic://lyrics/demo-002"},
+    {"lyric_version_id": "lyr-demo-003-ko", "recording_id": "rec-demo-003", "status": "partial", "language": "ko", "source_id": "synthetic-lyrics", "reference": "synthetic://lyrics/demo-003", "notes": "2절 미확보(가상)"},
+    {"lyric_version_id": "lyr-demo-004-missing", "recording_id": "rec-demo-004", "status": "missing", "notes": "가사 미확보(가상). absent 가 아니라 unavailable"},
+    {"lyric_version_id": "lyr-demo-005-ko", "recording_id": "rec-demo-005", "status": "available", "language": "ko", "source_id": "synthetic-lyrics", "reference": "synthetic://lyrics/demo-005"},
+    {"lyric_version_id": "lyr-demo-006-missing", "recording_id": "rec-demo-006", "status": "missing"},
+    {"lyric_version_id": "lyr-demo-007-na", "recording_id": "rec-demo-007", "status": "not_applicable", "notes": "연주곡"},
+    {"lyric_version_id": "lyr-demo-008-en", "recording_id": "rec-demo-008", "status": "translation_only", "language": "en", "source_id": "synthetic-lyrics", "reference": "synthetic://lyrics/demo-008-en", "notes": "번역본만 확보(가상)"},
+    {"lyric_version_id": "lyr-demo-001-rerecord-ko", "recording_id": "rec-demo-001-rerecord-2025", "status": "available", "language": "ko", "source_id": "synthetic-lyrics", "reference": "synthetic://lyrics/demo-001-rerecord"},
+    {"lyric_version_id": "lyr-demo-009-cover-missing", "recording_id": "rec-demo-009-cover", "status": "missing"}
+  ]
+}

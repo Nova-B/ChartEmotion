@@ -238,12 +238,18 @@ def source_issues(source: dict[str, Any]) -> list[dict[str, Any]]:
     return issues
 
 
-def check_source_gate(source: dict[str, Any], *, data_mode: str, operations: tuple[str, ...]) -> None:
-    """배치·실험이 이 출처로 해당 작업을 해도 되는지 검사한다. 안 되면 InputError."""
+def check_source_gate(
+    source: dict[str, Any],
+    *,
+    data_mode: str,
+    operations: tuple[str, ...],
+    kinds: tuple[str, ...] = ("chart",),
+) -> None:
+    """배치·실험·녹음·가사 등록이 이 출처로 해당 작업을 해도 되는지 검사한다. 안 되면 InputError."""
     reasons: list[dict[str, Any]] = []
     sid = source["source_id"]
-    if source["kind"] != "chart":
-        reasons.append({"code": "source_kind_mismatch", "message": f"출처 '{sid}' 의 종류는 '{source['kind']}' 이며 차트 출처가 아닙니다"})
+    if source["kind"] not in kinds:
+        reasons.append({"code": "source_kind_mismatch", "message": f"출처 '{sid}' 의 종류는 '{source['kind']}' 이며 여기서는 {', '.join(kinds)} 출처만 쓸 수 있습니다"})
     if data_mode == "synthetic" and source["data_mode"] != "synthetic":
         reasons.append({"code": "synthetic_requires_synthetic_source", "message": f"synthetic 모드에서는 synthetic 출처만 쓸 수 있습니다. '{sid}' 는 {source['data_mode']} 출처입니다"})
     if data_mode == "real" and source["data_mode"] != "real":

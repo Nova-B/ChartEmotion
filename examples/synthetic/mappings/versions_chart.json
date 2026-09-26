@@ -1,0 +1,9 @@
+{
+  "schema": "chart-emotion.mappings.v1",
+  "reviewer_id": "reviewer-1",
+  "mappings": [
+    {"snapshot_id": "demo-versions-r1", "rank": 1, "state": "confirmed", "recording_id": "rec-demo-001", "lyric_version_id": "lyr-demo-001-ko", "reason": "원곡 (가상)", "base_revision": 0},
+    {"snapshot_id": "demo-versions-r1", "rank": 2, "state": "confirmed", "recording_id": "rec-demo-001-rerecord-2025", "lyric_version_id": "lyr-demo-001-rerecord-ko", "reason": "같은 제목·가수지만 2025 재녹음. 별도 녹음으로 확정", "base_revision": 0},
+    {"snapshot_id": "demo-versions-r1", "rank": 3, "state": "confirmed", "recording_id": "rec-demo-009-cover", "lyric_version_id": "lyr-demo-009-cover-missing", "reason": "같은 제목의 다른 가수 커버. 별도 녹음으로 확정", "base_revision": 0}
+  ]
+}

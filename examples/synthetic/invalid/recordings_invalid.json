@@ -1,0 +1,37 @@
+{
+  "schema": "chart-emotion.recordings.v1",
+  "registered_by": "reviewer-1",
+  "recordings": [
+    {
+      "recording_id": "rec-bad-001",
+      "title": "정밀도 불일치",
+      "artist": "가상가수",
+      "version_kind": "original",
+      "release_precision": "year",
+      "release_date": "2015-03-14",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic"
+    },
+    {
+      "recording_id": "rec-bad-002",
+      "title": "unknown 인데 날짜 있음",
+      "artist": "가상가수",
+      "version_kind": "original",
+      "release_precision": "unknown",
+      "release_date": "2015",
+      "vocal_type": "lyrical",
+      "data_mode": "synthetic"
+    },
+    {
+      "recording_id": "rec-bad-003",
+      "title": "타입 오류·가사 본문 필드",
+      "artist": "가상가수",
+      "version_kind": "cover",
+      "release_precision": "day",
+      "release_date": "2015-02-30",
+      "vocal_type": true,
+      "data_mode": "synthetic",
+      "lyrics_text": "가사 본문은 받지 않습니다"
+    }
+  ]
+}

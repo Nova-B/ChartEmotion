@@ -20,6 +20,9 @@ def init_workspace(workspace: Path) -> dict[str, Any]:
         sources = list_sources(conn)
         snapshot_count = conn.execute("SELECT COUNT(*) FROM chart_snapshots").fetchone()[0]
         entry_count = conn.execute("SELECT COUNT(*) FROM chart_entries").fetchone()[0]
+        recording_count = conn.execute("SELECT COUNT(*) FROM recordings").fetchone()[0]
+        lyric_count = conn.execute("SELECT COUNT(*) FROM lyric_versions").fetchone()[0]
+        mapping_count = conn.execute("SELECT COUNT(*) FROM entry_mappings").fetchone()[0]
         fk_violations = integrity_check(conn)
     finally:
         conn.close()
@@ -35,7 +38,14 @@ def init_workspace(workspace: Path) -> dict[str, Any]:
         "migrated": previous_version != SCHEMA_VERSION,
         "seeded_sources": [SYNTHETIC_DEMO_SOURCE_ID] if seeded else [],
         "existing_data_preserved": not created,
-        "counts": {"sources": len(sources), "snapshots": snapshot_count, "entries": entry_count},
+        "counts": {
+            "sources": len(sources),
+            "snapshots": snapshot_count,
+            "entries": entry_count,
+            "recordings": recording_count,
+            "lyric_versions": lyric_count,
+            "mapping_revisions": mapping_count,
+        },
         "foreign_key_violations": fk_violations,
         "notice": SYNTHETIC_NOTICE,
     }

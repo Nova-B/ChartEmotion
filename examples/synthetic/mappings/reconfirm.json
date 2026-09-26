@@ -1,0 +1,7 @@
+{
+  "schema": "chart-emotion.mappings.v1",
+  "reviewer_id": "reviewer-2",
+  "mappings": [
+    {"snapshot_id": "demo-period-b-r1", "rank": 4, "state": "confirmed", "recording_id": "rec-demo-002", "lyric_version_id": "lyr-demo-002-ko", "reason": "재녹음 아님 확인. 원곡으로 재확정 (가상)", "base_revision": 2}
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "chart-emotion.mappings.v1",
+  "reviewer_id": "reviewer-1",
+  "mappings": [
+    {"snapshot_id": "demo-period-a-r1", "rank": 1, "state": "confirmed", "recording_id": "rec-demo-001", "lyric_version_id": "lyr-demo-002-ko", "reason": "다른 녹음의 가사 버전을 잘못 선택한 예", "base_revision": 1}
+  ]
+}

@@ -51,6 +51,15 @@ class BatchConfigTest(TempDirCase):
         self.assertEqual(fields["period_start"], "invalid_date")
         self.assertEqual(fields["period_end"], "invalid_date")
 
+    def test_dates_must_be_ascii_and_in_gregorian_range(self) -> None:
+        for start in ("٢٠١٥-01-01", "２０１５-01-01", "0000-01-01", "2015-02-29"):
+            with self.subTest(start=start):
+                with self.assertRaises(InputError) as ctx:
+                    parse_batch_config(batch_dict(period_start=start))
+                self.assertEqual(error_fields(ctx.exception)["period_start"], "invalid_date")
+        parse_batch_config(batch_dict(period_start="0001-01-01", period_end="0001-12-31", display_year=1000))
+        parse_batch_config(batch_dict(period_start="2024-02-29", period_end="2024-02-29", display_year=2024))
+
     def test_date_order(self) -> None:
         with self.assertRaises(InputError) as ctx:
             parse_batch_config(batch_dict(period_start="2015-12-31", period_end="2015-01-01"))

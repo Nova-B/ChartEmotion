@@ -1,0 +1,8 @@
+{
+  "schema": "chart-emotion.mappings.v1",
+  "reviewer_id": "reviewer-2",
+  "mappings": [
+    {"snapshot_id": "demo-period-a-r1", "rank": 1, "state": "confirmed", "recording_id": "rec-demo-001", "lyric_version_id": "lyr-demo-001-ko", "reason": "재확인 (가상)", "base_revision": 1},
+    {"snapshot_id": "demo-period-a-r1", "rank": 2, "state": "candidate", "recording_id": "rec-demo-001-rerecord-2025", "reason": "오래된 검토표: revision 1 기준으로 작성됨", "base_revision": 1}
+  ]
+}

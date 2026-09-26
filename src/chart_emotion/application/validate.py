@@ -4,7 +4,7 @@
 실험 검증: 설정 구조 검증 후 참조 스냅샷의 존재·완전성·비교 가능성(같은 차트, 같은 N, 같은 산정 방식,
 같은 기간 길이, 서로 다른 기간)을 점검한다.
 
-이 단계는 곡 매칭·가사·라벨을 다루지 않으며 어떤 정서 수치도 계산하지 않는다.
+매칭(D05) 진행 상황은 선택한 스냅샷 범위로 보고한다. 라벨·집계는 다루지 않으며 어떤 정서 수치도 계산하지 않는다.
 """
 
 from __future__ import annotations
@@ -19,14 +19,10 @@ from ..domain.contracts import LABELS, LABELSET_VERSION
 from ..domain.experiment import ExperimentConfig, load_experiment_config
 from ..errors import InputError
 from ..storage.database import SCHEMA_VERSION, database_path, foreign_keys_enabled, integrity_check, open_workspace
+from .mappings import entry_states, lyrics_summary, lyrics_summary_for_snapshots, matching_summary
 from .sources import check_source_gate, fetch_source, list_sources, source_issues
 
 NOT_IMPLEMENTED_SECTIONS: dict[str, Any] = {
-    "matching": {
-        "status": "not_implemented",
-        "message": "곡·버전 매칭(D05)은 아직 구현되지 않았습니다. 제목·아티스트 문자열이 같아도 같은 곡으로 병합하지 않습니다",
-    },
-    "lyrics": {"status": "not_implemented", "message": "가사 확보(D05~)는 구현되지 않았습니다. 가사를 저장하지 않습니다"},
     "labeling": {
         "status": "not_analyzed",
         "labelset_version": LABELSET_VERSION,
@@ -107,12 +103,18 @@ def validate_workspace(workspace: Path) -> dict[str, Any]:
             charts = [dict(row) for row in conn.execute("SELECT * FROM chart_definitions ORDER BY chart_id")]
             snapshots = _load_snapshots(conn)
             entries_all = conn.execute("SELECT COUNT(*) FROM chart_entries").fetchone()[0]
+            matching = matching_summary(conn, [s["snapshot_id"] for s in snapshots if s["is_latest_revision"]])
+            matching["scope_note"] = "최신 revision 스냅샷만 포함합니다. 개별 스냅샷은 show-mappings --snapshot 으로 봅니다"
+            lyrics = lyrics_summary(conn)
+            recordings_total = conn.execute("SELECT COUNT(*) FROM recordings").fetchone()[0]
+            mapping_revisions_total = conn.execute("SELECT COUNT(*) FROM entry_mappings").fetchone()[0]
+            mapping_issues = _mapping_integrity_issues(conn)
         finally:
             conn.execute("COMMIT")
     finally:
         conn.close()
 
-    issues: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = list(mapping_issues)
     if not fk_on:
         issues.append({"severity": "error", "code": "foreign_keys_off", "message": "외래키 검사가 꺼져 있습니다"})
     for violation in fk_violations:
@@ -164,10 +166,36 @@ def validate_workspace(workspace: Path) -> dict[str, Any]:
             "entries_all_revisions": entries_all,
             "entries_latest_revisions": latest_entry_total,
             "entries_note": "항목은 (snapshot_id, rank) 기본키로 세므로 같은 파일을 다시 넣어도 중복되지 않습니다",
+            "recordings": recordings_total,
+            "lyric_versions": lyrics["lyric_versions"],
+            "mapping_revisions": mapping_revisions_total,
         },
         "issues": issues,
+        "matching": matching,
+        "lyrics": lyrics,
         **NOT_IMPLEMENTED_SECTIONS,
     }
+
+
+def _mapping_integrity_issues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    """쓰기 시점에 막는 규칙을 저장소 차원에서 다시 점검한다(정상이면 빈 목록)."""
+    issues: list[dict[str, Any]] = []
+    rows = conn.execute(
+        """
+        SELECT m.mapping_id, m.recording_id, m.lyric_version_id, l.recording_id AS lyric_recording_id,
+               r.data_mode AS recording_mode, s.data_mode AS snapshot_mode
+        FROM entry_mappings m
+        JOIN chart_snapshots s ON s.snapshot_id = m.snapshot_id
+        LEFT JOIN recordings r ON r.recording_id = m.recording_id
+        LEFT JOIN lyric_versions l ON l.lyric_version_id = m.lyric_version_id
+        """
+    ).fetchall()
+    for row in rows:
+        if row["lyric_version_id"] and row["lyric_recording_id"] != row["recording_id"]:
+            issues.append({"severity": "error", "code": "mapping_lyric_recording_mismatch", "mapping_id": row["mapping_id"], "message": "매핑의 가사 버전이 선택한 녹음의 것이 아닙니다"})
+        if row["recording_id"] and row["recording_mode"] != row["snapshot_mode"]:
+            issues.append({"severity": "error", "code": "mapping_data_mode_mismatch", "mapping_id": row["mapping_id"], "message": "매핑의 녹음과 스냅샷의 data_mode 가 다릅니다"})
+    return issues
 
 
 def _snapshot_summary(conn: sqlite3.Connection, snapshot_id: str) -> dict[str, Any] | None:
@@ -290,7 +318,25 @@ def _validate_experiment_with_db(conn: sqlite3.Connection, config: ExperimentCon
             (a["snapshot_id"], b["snapshot_id"]),
         ).fetchone()[0]
         comparability["identical_string_rows_note"] = (
-            "제목·아티스트·provider_track_id 문자열이 완전히 같은 행의 수입니다. 확정된 곡 매칭이 아니며 D05 에서 사람이 확정합니다"
+            "제목·아티스트·provider_track_id 문자열이 완전히 같은 행의 수입니다. 확정된 곡 매칭이 아닙니다. 확정 매칭은 matching 절을 보세요"
+        )
+
+    found_ids = [s["snapshot_id"] for s in snapshots]
+    matching = matching_summary(conn, found_ids)
+    matching["entries_by_snapshot"] = {
+        sid: [
+            {k: e[k] for k in ("rank", "title", "artist", "provider_track_id", "state", "revision", "recording_id", "lyric_version_id", "lyric_status", "vocal_type")}
+            for e in entry_states(conn, sid)
+        ]
+        for sid in found_ids
+    }
+    if matching["entries"] and matching["status"] != "complete":
+        unconfirmed = matching["entries"] - matching["states"]["confirmed"]
+        warnings.append(
+            {
+                "code": "matching_incomplete",
+                "message": f"매칭 미완료: {unconfirmed}개 항목이 confirmed 가 아닙니다 (candidate {matching['states']['candidate']}, unresolved {matching['states']['unresolved']}, unmapped {matching['states']['unmapped']}). 라벨 집계에서는 미확정(U)으로 다룹니다",
+            }
         )
 
     return {
@@ -299,8 +345,10 @@ def _validate_experiment_with_db(conn: sqlite3.Connection, config: ExperimentCon
         "warnings": warnings,
         "snapshots": snapshots,
         "comparability": comparability,
+        "matching": matching,
+        "lyrics": lyrics_summary_for_snapshots(conn, found_ids),
         "message": (
-            "실험 설정과 스냅샷 참조가 비교 가능 조건을 충족합니다. 매칭·라벨링·집계는 아직 수행되지 않았습니다"
+            "실험 설정과 스냅샷 참조가 비교 가능 조건을 충족합니다. 라벨링·집계는 아직 수행되지 않았습니다"
             if not errors
             else f"실험 설정에 {len(errors)}건의 오류가 있어 비교를 진행할 수 없습니다"
         ),
